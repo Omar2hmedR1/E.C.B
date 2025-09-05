@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>Eiro Currency Bank</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', Arial, sans-serif; background: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%); margin: 0; padding: 0;}
+        .container { max-width: 400px; margin: 60px auto; background: #fff; border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 32px 24px; text-align: center;}
+        .logo { font-size: 64px; margin-bottom: 12px; animation: bounce 1s infinite alternate;}
+        @keyframes bounce { to { transform: translateY(-10px);} }
+        h1 { color: #ff4e50; margin-bottom: 8px; font-size: 2.2em;}
+        .balance { font-size: 2em; color: #f9d423; margin: 18px 0; font-weight: bold;}
+        .btn { background: linear-gradient(90deg, #f9d423 0%, #ff4e50 100%); color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 1.1em; margin: 8px 0; cursor: pointer; transition: background 0.3s;}
+        .btn:active { background: linear-gradient(90deg, #ff4e50 0%, #f9d423 100%);}
+        .shop { margin-top: 28px; background: #f7f7f7; border-radius: 12px; padding: 16px;}
+        .shop-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 1.1em;}
+        .emerald { color: #2ecc40; font-weight: bold;}
+        .hidden { display: none;}
+        .input { padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; width: 80%; font-size: 1em;}
+    </style>
+</head>
+<body>
+    <div class="container" id="loginBox">
+        <div class="logo">🪙</div>
+        <h1>تسجيل الدخول</h1>
+        <input class="input" type="text" id="username" placeholder="اسم المستخدم"><br>
+        <input class="input" type="password" id="password" placeholder="كلمة المرور"><br>
+        <button class="btn" onclick="login()">دخول</button>
+        <div id="loginMsg"></div>
+    </div>
+    <div class="container hidden" id="mainBox">
+        <div class="logo">🪙</div>
+        <h1>بنك إيرو للأطفال</h1>
+        <div class="balance" id="balance"></div>
+        <div class="shop">
+            <h2>المتجر</h2>
+            <div class="shop-item">
+                <span>١٦ <span class="emerald">إيميرالد</span> في ماينكرافت</span>
+                <button class="btn" onclick="buyEmerald()">شراء بـ ١٠٠٠ إيرو</button>
+            </div>
+        </div>
+        <div id="message"></div>
+        <button class="btn" onclick="logout()">تسجيل خروج</button>
+    </div>
+    <script>
+        const scriptURL = "https://script.google.com/macros/s/AKfycbw9jKigrYSSroB09FAqVShh1twwtW1YpSYKQt0E25UBIkwJcPnqc72wB45bq6NLnXou/exec"
+        let username = "";
+        let password = "";
+        let balance = 0;
+
+        function login() {
+            username = document.getElementById('username').value;
+            password = document.getElementById('password').value;
+            fetch(`${scriptURL}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=get`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.balance !== undefined) {
+                        balance = parseInt(data.balance);
+                        document.getElementById('balance').textContent = balance + " إيرو";
+                        document.getElementById('loginBox').classList.add('hidden');
+                        document.getElementById('mainBox').classList.remove('hidden');
+                    } else {
+                        showLoginMsg("بيانات الدخول غير صحيحة!");
+                    }
+                })
+                .catch(() => showLoginMsg("خطأ في الاتصال!"));
+        }
+
+        function buyEmerald() {
+            if (balance >= 1000) {
+                fetch(`${scriptURL}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=buy&items=1000`)
+                    .then(res => res.text())
+                    .then(result => {
+                        if (result === "bought") {
+                            balance -= 1000;
+                            document.getElementById('balance').textContent = balance + " إيرو";
+                            showMessage("تم شراء ١٦ إيميرالد! سيتم إرسال رسالة للمدير.");
+                        } else if (result === "not enough") {
+                            showMessage("رصيدك غير كافي للشراء!");
+                        } else {
+                            showMessage("حدث خطأ!");
+                        }
+                    });
+            } else {
+                showMessage("رصيدك غير كافي للشراء!");
+            }
+        }
+
+        function showMessage(msg) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = msg;
+            messageDiv.style.color = "#ff4e50";
+            setTimeout(() => { messageDiv.textContent = ""; }, 3000);
+        }
+
+        function showLoginMsg(msg) {
+            const loginMsg = document.getElementById('loginMsg');
+            loginMsg.textContent = msg;
+            loginMsg.style.color = "#ff4e50";
+            setTimeout(() => { loginMsg.textContent = ""; }, 3000);
+        }
+
+        function logout() {
+            document.getElementById('mainBox').classList.add('hidden');
+            document.getElementById('loginBox').classList.remove('hidden');
+            document.getElementById('username').value = "";
+            document.getElementById('password').value = "";
+        }
+    </script>
+</body>
+</html>
